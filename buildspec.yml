@@ -10,3 +10,8 @@ phases:
       - echo "Building the project wazaaaa"
       - npm install
       - npm run build
+
+artifacts:
+  files:
+    - index.js
+    - package.json
