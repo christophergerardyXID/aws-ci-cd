@@ -1,0 +1,102 @@
+Description: El andres me reto y yo dije ah como no voy a poder
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  # Permitir acceso a internet como dijo el coach
+  InternetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # Todos los recursos en esta subnet tendran una IP publica
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+
+  # Todos los recursos en esta subnet no seran publicos
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: false
+      # Obtiene la lista de AvailabilityZone y selecciona la primera
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+
+  RdsSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Rds subnet group
+      SubnetIds:
+        - !Ref PrivateSubnet
+
+  Ec2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Grupo de seguridad para EC2 aceptar conexiones puerto 80
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  RdsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Grupo de seguridad para db mysql aceptar conexiones puerto 3306
+      SecurityGroupIngress:
+        - IpProtocol: tpc
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 10.0.0.0/24
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-088b41ffb0933423f
+      SecurityGroupIds:
+        - !Ref Ec2SecurityGroup
+      SubnetId: !Ref PublicSubnet
+
+  RdsInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: RDSInstance
+      Engine: mysql
+      DBInstanceClass: db.t2.micro
+      AllocatedStorage: '20'
+      MasterUsername: admin
+      MasterUserPassword: password
+      PubliclyAccessible: false
+      DBSubnetGroupName: !Ref RdsSubnetGroup
+      MultiAZ: false
+      VPCSecurityGroups:
+        - !Ref RdsSecurityGroup
+
+

@@ -1,0 +1,4 @@
+node_modules
+aws-ci-cd.iml
+.idea
+yarn.lock

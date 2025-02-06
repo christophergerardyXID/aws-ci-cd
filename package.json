@@ -1,0 +1,10 @@
+{
+  "name": "aws-ci-cd",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "chris <christophergerardy@icloud.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
