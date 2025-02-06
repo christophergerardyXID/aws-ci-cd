@@ -1,4 +1,5 @@
 node_modules
-aws-ci-cd.iml
 .idea
+dist
+aws-ci-cd.iml
 yarn.lock
