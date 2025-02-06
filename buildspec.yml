@@ -3,15 +3,17 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 14
+      nodejs: 18
 
   build:
     commands:
       - echo "Building the project wazaaaa"
       - npm install
       - npm run build
+      - ls
 
 artifacts:
   files:
     - index.js
     - package.json
+  discard-paths: yes
