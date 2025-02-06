@@ -10,10 +10,10 @@ phases:
       - echo "Building the project wazaaaa"
       - npm install
       - npm run build
-      - ls
 
 artifacts:
   files:
     - "dist/*"
+    - "package.json"
   base-directory: "."
   discard-paths: no
