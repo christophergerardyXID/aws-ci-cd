@@ -145,7 +145,7 @@ Resources:
               - Effect: 'Allow'
                 Action:
                   - 'codestar-connections:UseConnection'
-                Resource: 'arn:aws:codeconnections:us-east-2:209479311144:connection/6d61fd65-3208-4a21-ac38-2714ae7c905e'
+                Resource: 'arn:aws:codeconnections:us-east-2:209479311144:connection/9ee419ef-5a13-4054-8855-ce44ff6264d5'
 
   CodeBuildRole:
     Type: AWS::IAM::Role
@@ -211,7 +211,7 @@ Resources:
               OutputArtifacts:
                 - Name: SourceArtifact
               Configuration:
-                ConnectionArn: arn:aws:codeconnections:us-east-2:209479311144:connection/6d61fd65-3208-4a21-ac38-2714ae7c905e
+                ConnectionArn: arn:aws:codeconnections:us-east-2:209479311144:connection/9ee419ef-5a13-4054-8855-ce44ff6264d5
                 FullRepositoryId: "christophergerardyXID/aws-ci-cd"
                 BranchName: "main"
 
