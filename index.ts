@@ -4,7 +4,7 @@ const app = express();
 
 app.get('/', (_: any, res: any) => {
     return res.json({
-        message: 'Hello world from aws whats up',
+        message: 'Hello world pipelin',
     });
 });
 
