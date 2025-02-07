@@ -214,6 +214,7 @@ Resources:
                 ConnectionArn: arn:aws:codeconnections:us-east-2:209479311144:connection/9ee419ef-5a13-4054-8855-ce44ff6264d5
                 FullRepositoryId: "christophergerardyXID/aws-ci-cd"
                 BranchName: "main"
+                DetectChanges: true
 
         - Name: Build
           Actions:
