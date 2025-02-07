@@ -92,6 +92,16 @@ Resources:
       SecurityGroupIds:
         - !Ref Ec2SecurityGroup
       SubnetId: !Ref PublicSubnet
+      Tags:
+        - Key: "Appname"
+          Value: "CiCdNodeJsApp"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+          apt-get install -y nodejs
+          node -v
+          npm -v
 
   #RdsInstance:
   #  Type: AWS::RDS::DBInstance
@@ -113,6 +123,11 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "aws-ci-cd-${AWS::AccountId}"
+
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: "CiCdNodejsApp"
 
   CodePipelineRole:
     Type: AWS::IAM::Role
@@ -146,6 +161,15 @@ Resources:
                 Action:
                   - 'codestar-connections:UseConnection'
                 Resource: 'arn:aws:codeconnections:us-east-2:209479311144:connection/9ee419ef-5a13-4054-8855-ce44ff6264d5'
+              - Effect: 'Allow'
+                Action:
+                  - 'codedeploy:CreateDeployment'
+                  - 'codedeploy:GetDeployment'
+                  - 'codedeploy:RegisterApplicationRevision'
+                  - 'codedeploy:GetApplication'
+                  - 'codedeploy:GetDeploymentGroup'
+                  - 'codedeploy:GetDeploymentConfig'
+                Resource: '*'
 
   CodeBuildRole:
     Type: AWS::IAM::Role
@@ -175,6 +199,34 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: '*'
 
+  CodeDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "codedeploy.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "CodeDeployPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "ec2:DescribeInstances"
+                  - "ec2:DescribeInstanceStatus"
+                  - "autoscaling:CompleteLifecycleAction"
+                  - "autoscaling:PutLifecycleHook"
+                Resource: "*"
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -190,7 +242,23 @@ Resources:
       Artifacts:
         Type: S3
         Location: !Ref S3Bucket
-        Packaging: NONE
+        Name: "dist-build.zip"
+
+  CodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      DeploymentGroupName: "CiCdDeploymentGroup"
+      ServiceRoleArn: !GetAtt CodeDeployRole.Arn
+      Ec2TagFilters:
+        - Key: "Appname"
+          Value: "CiCdNodeJsApp"
+          Type: "KEY_AND_VALUE"
+      DeploymentConfigName: CodeDeployDefault.OneAtATime
+      AutoRollbackConfiguration:
+        Enabled: true
+        Events:
+          - DEPLOYMENT_FAILURE
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -230,3 +298,17 @@ Resources:
                 - Name: BuildArtifact
               Configuration:
                 ProjectName: !Ref CodeBuildProject
+
+        - Name: Deploy
+          Actions:
+            - Name: DeployAction
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CodeDeploy
+                Version: "1"
+              InputArtifacts:
+                - Name: BuildArtifact
+              Configuration:
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Ref CodeDeployDeploymentGroup
