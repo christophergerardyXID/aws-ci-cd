@@ -242,7 +242,9 @@ Resources:
       Artifacts:
         Type: S3
         Location: !Ref S3Bucket
-        Name: "dist-build.zip"
+        Packaging: ZIP
+        Name: "app.zip"
+        Path: "root"
 
   CodeDeployDeploymentGroup:
     Type: AWS::CodeDeploy::DeploymentGroup
@@ -263,6 +265,7 @@ Resources:
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
+      Name: App
       RoleArn: !GetAtt CodePipelineRole.Arn
       ArtifactStore:
         Type: S3
@@ -277,7 +280,7 @@ Resources:
                 Version: "1"
                 Provider: CodeStarSourceConnection
               OutputArtifacts:
-                - Name: SourceArtifact
+                - Name: source
               Configuration:
                 ConnectionArn: arn:aws:codeconnections:us-east-2:209479311144:connection/9ee419ef-5a13-4054-8855-ce44ff6264d5
                 FullRepositoryId: "christophergerardyXID/aws-ci-cd"
@@ -293,9 +296,9 @@ Resources:
                 Provider: CodeBuild
                 Version: "1"
               InputArtifacts:
-                - Name: SourceArtifact
+                - Name: source
               OutputArtifacts:
-                - Name: BuildArtifact
+                - Name: dist
               Configuration:
                 ProjectName: !Ref CodeBuildProject
 
@@ -308,7 +311,7 @@ Resources:
                 Provider: CodeDeploy
                 Version: "1"
               InputArtifacts:
-                - Name: BuildArtifact
+                - Name: dist
               Configuration:
                 ApplicationName: !Ref CodeDeployApplication
                 DeploymentGroupName: !Ref CodeDeployDeploymentGroup

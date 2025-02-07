@@ -16,4 +16,4 @@ artifacts:
     - "dist/*"
     - "package.json"
   base-directory: "."
-  discard-paths: no
+  discard-paths: yes
