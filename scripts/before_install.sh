@@ -1,2 +1,2 @@
 #!/bin/bash
-pm2 delete all --silent
+sudo pm2 delete all --silent
