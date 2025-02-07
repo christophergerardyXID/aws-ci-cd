@@ -46,6 +46,12 @@ Resources:
       # Obtiene la lista de AvailabilityZone y selecciona la primera
       AvailabilityZone: !Select [ 0, !GetAZs '' ]
 
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTable
+
   PrivateSubnetRDS:
     Type: AWS::EC2::Subnet
     Properties:
@@ -73,6 +79,11 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0
 
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
   RdsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -87,6 +98,7 @@ Resources:
   Ec2Instance:
     Type: AWS::EC2::Instance
     Properties:
+      IamInstanceProfile: !Ref CodeDeployInstanceProfile
       InstanceType: t2.micro
       ImageId: ami-088b41ffb0933423f
       SecurityGroupIds:
@@ -98,12 +110,13 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-          apt-get install -y nodejs
-          node -v
-          npm -v
-
-  #RdsInstance:
+          sudo yum update -y
+          sudo yum -y install wget ruby nodejs nginx
+          
+          wget https://aws-codedeploy-us-east-2.s3.amazonaws.com/latest/install
+          chmod +x ./install
+          sudo ./install auto
+    #RdsInstance:
   #  Type: AWS::RDS::DBInstance
   #  Properties:
   #    Engine: mysql
@@ -198,6 +211,27 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: '*'
+
+  CodeDeployInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CodeDeployInstanceRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ ec2.amazonaws.com ]
+            Action: [ "sts:AssumeRole" ]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy
+
+  CodeDeployInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: CodeDeployInstanceProfile
+      Roles:
+        - !Ref CodeDeployInstanceRole
 
   CodeDeployRole:
     Type: AWS::IAM::Role

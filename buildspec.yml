@@ -15,5 +15,6 @@ artifacts:
   files:
     - "dist/*"
     - "package.json"
+    - "appspec.yml"
   base-directory: "."
   discard-paths: yes
